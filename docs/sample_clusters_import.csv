@@ -1,0 +1,4 @@
+cluster_id,title,severity,sku,defect_family,count,first_seen,last_seen,confidence,ai_summary
+CL-1101,Seal failure complaints - soup cans,High,SP-12-CHN,Packaging,8,2026-05-02 08:15,2026-05-03 14:20,0.91,Multiple complaints indicate weak seam integrity on lot SP-12-CHN with leaks reported after shipment.
+CL-1102,Off-odor complaints - yogurt cups,Medium,YG-06-VNL,Odor,5,2026-05-01 09:05,2026-05-04 10:40,0.78,Customer reports describe sour off-odor concentrated in vanilla yogurt cups from one production window.
+CL-1103,Foreign material reports - granola bars,Critical,GB-24-HNY,Foreign Object,3,2026-05-04 07:30,2026-05-04 11:10,0.97,Three escalations cite hard plastic fragments in finished bars and require urgent containment.

@@ -1,0 +1,5 @@
+ticket_id,cluster_id,content,severity,timestamp,associated_sku
+TKT-21001,CL-1101,Customer reported two dented soup cans with product leaking from the bottom seam.,High,2026-05-03 08:42,SP-12-CHN
+TKT-21002,CL-1101,Retail partner flagged repeat seam burst complaints from the same pallet delivered overnight.,High,2026-05-03 16:15,SP-12-CHN
+TKT-21003,CL-1102,Consumer described a sharp sour smell immediately after opening a vanilla yogurt cup.,Medium,2026-05-04 09:18,YG-06-VNL
+TKT-21004,CL-1103,Escalation from support noted a small plastic shard recovered from a honey granola bar.,Critical,2026-05-04 11:32,GB-24-HNY
