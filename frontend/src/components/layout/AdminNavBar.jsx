@@ -64,30 +64,6 @@ export default function AdminNavBar({ activePanel, setActivePanel }) {
           aria-label="Admin sections"
           style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', height: '100%' }}
         >
-          {[
-            { to: '/traceability', label: 'Traceability' },
-            { to: '/observability', label: 'Observability' },
-          ].map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              style={({ isActive }) => ({
-                fontSize: 14,
-                fontWeight: isActive ? 600 : 500,
-                letterSpacing: '-0.01em',
-                color: isActive ? 'var(--secondary)' : '#64748b',
-                transition: 'color 0.15s ease',
-                display: 'flex',
-                alignItems: 'center',
-                height: '100%',
-                borderBottom: isActive ? '2px solid var(--secondary)' : '2px solid transparent',
-                paddingBottom: 2,
-                textDecoration: 'none',
-              })}
-            >
-              {item.label}
-            </NavLink>
-          ))}
           {ADMIN_TABS.map((tab) => {
             const isActive = activePanel === tab.key;
             return (
@@ -112,6 +88,29 @@ export default function AdminNavBar({ activePanel, setActivePanel }) {
               </button>
             );
           })}
+          {[
+            { to: '/observability', label: 'Observability' },
+          ].map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              style={({ isActive }) => ({
+                fontSize: 14,
+                fontWeight: isActive ? 600 : 500,
+                letterSpacing: '-0.01em',
+                color: isActive ? 'var(--secondary)' : '#64748b',
+                transition: 'color 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                height: '100%',
+                borderBottom: isActive ? '2px solid var(--secondary)' : '2px solid transparent',
+                paddingBottom: 2,
+                textDecoration: 'none',
+              })}
+            >
+              {item.label}
+            </NavLink>
+          ))}
         </nav>
       </div>
 

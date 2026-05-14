@@ -1,4 +1,5 @@
 import { ACTIVE_COPILOT_VERSION, apiFetch } from '../config';
+import { supabase } from '../lib/supabaseClient';
 
 async function buildApiError(response, fallbackMessage) {
   let detail = '';
@@ -79,6 +80,96 @@ export async function sendChatMessage(message, clusterId, taskType = 'rca', retr
   throw lastError || new Error('Chat request failed');
 }
 
+export async function sendOllamaChatMessage(message, clusterId, taskType = 'rca', retries = 2, baseDelayMs = 250) {
+  let lastError = null;
+  const ollamaUrl = import.meta.env.VITE_OLLAMA_URL || 'http://localhost:11434';
+  const endpoint = '/api/chat'; // Ollama endpoint
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      // Get Supabase auth token
+      let token = '';
+      try {
+        token = localStorage.getItem('auraqc_auth_token') || '';
+      } catch {
+        // Ignore storage read failures
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      const startTime = Date.now();
+      const res = await fetch(`${ollamaUrl}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: 'llama3.2', // Default model, can be configured
+          messages: [{ role: 'user', content: message }],
+          stream: false
+        })
+      });
+
+      const latencyMs = Date.now() - startTime;
+
+      if (!res.ok) {
+        let detail = '';
+        try {
+          const errorPayload = await res.json();
+          detail = errorPayload?.message || errorPayload?.error || '';
+        } catch {
+          detail = '';
+        }
+
+        throw new Error(
+          detail
+            ? `Ollama request failed (${res.status}): ${detail}`
+            : `Ollama request failed (${res.status})`
+        );
+      }
+
+      const ollamaResponse = await res.json();
+      const responseText = ollamaResponse?.message?.content || '';
+
+      // Log to Supabase
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('llm_logs').insert({
+            user_id: user.id,
+            prompt: { message, cluster_id: clusterId, task_type: taskType },
+            response: responseText,
+            model: 'llama3.2',
+            latency_ms: latencyMs,
+            cluster_id: clusterId
+          });
+        }
+      } catch (logError) {
+        console.warn('Failed to log to Supabase:', logError);
+        // Don't fail the request if logging fails
+      }
+
+      return {
+        reply: responseText,
+        citations: [], // Ollama doesn't return citations in this format
+        clusters: [clusterId] // Return cluster info for compatibility
+      };
+    } catch (err) {
+      lastError = err;
+      if (attempt < retries) {
+        const delayMs = baseDelayMs * (attempt + 1);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
+  throw lastError || new Error('Ollama chat request failed');
+}
+
 export async function sendMultiClusterChatMessage(message, clusterIds, taskType = 'rca') {
   const res = await apiFetch('/api/chat/multi', {
     method: 'POST',
@@ -112,6 +203,87 @@ export async function sendMultiClusterChatMessage(message, clusterIds, taskType 
   }
 
   return res.json();
+}
+
+export async function sendOllamaMultiClusterChatMessage(message, clusterIds, taskType = 'rca') {
+  const ollamaUrl = import.meta.env.VITE_OLLAMA_URL || 'http://localhost:11434';
+  const endpoint = '/api/chat'; // Ollama endpoint
+
+  try {
+    // Get Supabase auth token
+    let token = '';
+    try {
+      token = localStorage.getItem('auraqc_auth_token') || '';
+    } catch {
+      // Ignore storage read failures
+    }
+
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const startTime = Date.now();
+    const res = await fetch(`${ollamaUrl}${endpoint}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'llama3.2',
+        messages: [{ role: 'user', content: message }],
+        stream: false
+      })
+    });
+
+    const latencyMs = Date.now() - startTime;
+
+    if (!res.ok) {
+      let detail = '';
+      try {
+        const errorPayload = await res.json();
+        detail = errorPayload?.message || errorPayload?.error || '';
+      } catch {
+        detail = '';
+      }
+
+      throw new Error(
+        detail
+          ? `Ollama multi-cluster request failed (${res.status}): ${detail}`
+          : `Ollama multi-cluster request failed (${res.status})`
+      );
+    }
+
+    const ollamaResponse = await res.json();
+    const responseText = ollamaResponse?.message?.content || '';
+
+    // Log to Supabase
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('llm_logs').insert({
+          user_id: user.id,
+          prompt: { message, cluster_ids: clusterIds, task_type: taskType },
+          response: responseText,
+          model: 'llama3.2',
+          latency_ms: latencyMs,
+          cluster_id: clusterIds[0] // Use first cluster for single cluster_id field
+        });
+      }
+    } catch (logError) {
+      console.warn('Failed to log to Supabase:', logError);
+      // Don't fail the request if logging fails
+    }
+
+    return {
+      reply: responseText,
+      citations: [], // Ollama doesn't return citations in this format
+      clusters: clusterIds // Return cluster info for compatibility
+    };
+  } catch (err) {
+    throw err;
+  }
 }
 
 export async function updateClusterStatus(clusterId, payload) {
@@ -303,6 +475,7 @@ export const fetchInvestigationQuestionsV2 = fetchInvestigationQuestions;
 export const fetchClusterDetailV2 = fetchClusterDetail;
 export const fetchResolutionRecordV2 = fetchResolutionRecord;
 export const sendChatMessageV2 = sendChatMessage;
-export const sendChatMessageOllama = sendChatMessage;
+export const sendChatMessageOllama = sendOllamaChatMessage;
 export const sendMultiClusterChatMessageV2 = sendMultiClusterChatMessage;
+export const sendMultiClusterChatMessageOllama = sendOllamaMultiClusterChatMessage;
 export const healthCheckV2 = healthCheck;

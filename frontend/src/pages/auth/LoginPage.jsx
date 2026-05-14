@@ -77,6 +77,7 @@ export default function LoginPage() {
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface-variant)' }}>Email</span>
             <input
               type="email"
+              autoComplete="username"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="name@company.com"
@@ -89,6 +90,7 @@ export default function LoginPage() {
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--on-surface-variant)' }}>Password</span>
             <input
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Enter your password"

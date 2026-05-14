@@ -1,13 +1,24 @@
 const TOKEN_STORAGE_KEY = 'auraqc_auth_token';
 
 const configuredBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").trim();
-const localhostFallbackUrls = configuredBaseUrl === "http://localhost:8000"
+const browserOrigin = typeof window !== "undefined" ? window.location.origin : "";
+const isLocalBrowserHost = typeof window !== "undefined"
+  ? ["localhost", "127.0.0.1"].includes(window.location.hostname)
+  : false;
+const isConfiguredLocalApi = configuredBaseUrl === "http://localhost:8000";
+const localhostFallbackUrls = isConfiguredLocalApi
   ? ["http://127.0.0.1:8011"]
   : [];
 
 export const API_BASE_URL = configuredBaseUrl
-  ? configuredBaseUrl.replace(/\/+$/, "")
-  : "http://localhost:8000";
+  ? (
+    // When frontend is accessed through a remote origin (for example a Cloudflare tunnel),
+    // forcing localhost would create a browser CORS boundary. Use same-origin instead.
+    isConfiguredLocalApi && !isLocalBrowserHost
+      ? browserOrigin
+      : configuredBaseUrl.replace(/\/+$/, "")
+  )
+  : (isLocalBrowserHost ? "http://localhost:8000" : browserOrigin);
 
 export const ACTIVE_COPILOT_VERSION = import.meta.env.VITE_COPILOT_VERSION || 'v2';
 export const DEFAULT_CLUSTER_ID = import.meta.env.VITE_DEFAULT_CLUSTER_ID || null;
